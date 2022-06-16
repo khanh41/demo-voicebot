@@ -1,2 +1,5 @@
 gTTS==2.2.4
 pyaudio
+opencv-python~=4.6.0.66
+numpy~=1.21.6
+onnxruntime~=1.11.1
