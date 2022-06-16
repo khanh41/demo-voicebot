@@ -1,10 +1,10 @@
 import speech_recognition as sr
 
-
 recognizer = sr.Recognizer()
 microphone = sr.Microphone()
 
-def recognize_speech_from_mic(recognizer, microphone):
+
+def recognize_speech_from_mic():
     """Transcribe speech from recorded from `microphone`.
 
     Returns a dictionary with three keys:
@@ -50,15 +50,13 @@ def recognize_speech_from_mic(recognizer, microphone):
         # API was unreachable or unresponsive
         response["success"] = False
         response["error"] = "API unavailable"
-        print("zxc")
     except sr.UnknownValueError:
         # speech was unintelligible
         response["error"] = "Unable to recognize speech"
-        print("zxc")
 
     return response
 
 
 if __name__ == "__main__":
-    guess = recognize_speech_from_mic(recognizer, microphone)
+    guess = recognize_speech_from_mic()
     print(guess["transcription"])

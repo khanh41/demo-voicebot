@@ -1,12 +1,12 @@
-from typing import Any
-from gtts import gTTS
-  
-# This module is imported so that we can 
-# play the converted audio
 import os
+from typing import Any
+
+from gtts import gTTS
+
 
 class TextToSpeech:
     language = 'en'
+
     def __init__(self) -> None:
         pass
 
