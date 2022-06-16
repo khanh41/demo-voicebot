@@ -1,7 +1,7 @@
 class Download:
     download_url = {
         "scrfd_face_detect": [
-            "/home/khanhpluto/khanhtv/sharingan/face-recognition/app/resources/scrfd_2.5g_bnkps_shape640x640.onnx",
+            "resources/scrfd_2.5g_bnkps_shape640x640.onnx",
             "https://www.dropbox.com/s/4l7mq1q8u2y7lwr/scrfd_2.5g_bnkps_shape640x640.onnx?dl=1"],
         "face_recognition": ["app/resources/recognition.clf",
                              "https://www.dropbox.com/s/rp7geuz1vjnsmcy/recognition.clf?dl=1"],
