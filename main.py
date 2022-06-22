@@ -8,8 +8,8 @@ import cv2
 from playsound import playsound
 
 import face_detect
-from challenges.clf_emotion import EmotionDetect
-from challenges.guess_age import GuessAge
+# from challenges.clf_emotion import EmotionDetectKNN
+from challenges.guess_age import GuessAgeKNN
 from constants import Chatbot
 from face_clf import FaceRecognitionModel
 from speech.speech_to_text import recognize_speech_from_mic
@@ -26,10 +26,10 @@ class VoiceBot(object):
         self.bbox = []
         self.landmark = []
 
-    def predict_emotion(self, emotion_detect: EmotionDetect):
-        while True:
-            if self.user_frame is not None:
-                self.user_emotion = emotion_detect(self.user_frame)
+    # def predict_emotion(self, emotion_detect: EmotionDetectKNN):
+    #     while True:
+    #         if len(self.landmark) > 0:
+    #             self.user_emotion = emotion_detect(self.user_frame, self.landmark)
 
     def predict_bbox(self):
         while True:
@@ -99,8 +99,7 @@ class VoiceBot(object):
 
         face_recognition = FaceRecognitionModel()
 
-        emotion_detect = EmotionDetect()
-        guess_age = GuessAge()
+        guess_age = GuessAgeKNN()
 
         thread_animate = threading.Thread(target=self.run_animate)
         thread_animate.start()
@@ -108,8 +107,9 @@ class VoiceBot(object):
         thread_bbox = threading.Thread(target=self.predict_bbox)
         thread_bbox.start()
 
-        thread_emotion = threading.Thread(target=self.predict_emotion, args=(emotion_detect,))
-        thread_emotion.start()
+        # emotion_detect = EmotionDetectKNN()
+        # thread_emotion = threading.Thread(target=self.predict_emotion, args=(emotion_detect,))
+        # thread_emotion.start()
 
         list_response_default = ["Chào bạn xinh đẹp, bạn tên là gì vậy?", "Bạn nói gì, nói lại xem",
                                  "Mọi người đâu hết rồi"]
@@ -141,18 +141,15 @@ class VoiceBot(object):
                             self.speak_duration = tts(
                                 f"Chào bạn {user_name[:user_name.find('_')]}, tôi nhớ bạn rồi đấy!")
 
-                            time.sleep(self.speak_duration + 2)
+                            time.sleep(self.speak_duration + 1)
                             self.speak_duration = tts("Giờ tôi sẽ đoán tuổi bạn, tút tút tút")
-
-                            bbox, _ = face_detect.scrfd_detect(self.user_frame)
-                            bbox = bbox[0].astype(int)
-                            face_image = self.user_frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                            time.sleep(1)
 
                             # age
                             response = random.choice(Chatbot.age_messages)
-                            age = guess_age(face_image)
+                            age = guess_age(self.user_frame, self.landmark)
                             self.speak_duration = tts(response.format(int(age)))
-                            time.sleep(1)
+                            time.sleep(2)
                             break
                         else:
                             if len(self.bbox) > 0:
