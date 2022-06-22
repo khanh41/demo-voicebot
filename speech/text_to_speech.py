@@ -23,5 +23,4 @@ class TextToSpeech:
         mp3_name = "welcome.mp3"
         os.remove(mp3_name)
         myobj.save(mp3_name)
-        # time.sleep(1)
         return get_length(mp3_name)

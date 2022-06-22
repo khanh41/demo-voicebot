@@ -10,8 +10,14 @@ def scrfd_detect(img):
     bboxes, kps = _detector.detect(img, 0.6, input_size=(640, 640))
 
     w, h, _ = img.shape
+    max_box = [0, None]
     for i in range(len(bboxes)):
         box = bboxes[i]
-        if box[2] - box[0] > w / 3 and box[3] - box[1] > h / 3:
-            return bboxes[i:i + 1], kps[i:i + 1]
+        if box[2] - box[0] > w / 5 and box[3] - box[1] > h / 5:
+            temp = (box[2] - box[0]) * (box[3] - box[1])
+            if temp > max_box[0]:
+                max_box = [temp, i]
+
+    if max_box[0] > 0:
+        return bboxes[max_box[1]:max_box[1] + 1], kps[max_box[1]:max_box[1] + 1]
     return [], []

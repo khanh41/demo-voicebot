@@ -21,16 +21,43 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 class VoiceBot(object):
     def __init__(self):
         self.speak_duration = 0
+        self.user_frame = None
+        self.user_emotion = "Neutral"
+        self.bbox = []
+        self.landmark = []
+
+    def predict_emotion(self, emotion_detect: EmotionDetect):
+        while True:
+            if self.user_frame is not None:
+                self.user_emotion = emotion_detect(self.user_frame)
+
+    def predict_bbox(self):
+        while True:
+            if self.user_frame is not None:
+                self.bbox, self.landmark = face_detect.scrfd_detect(self.user_frame)
 
     def run_animate(self):
+        vid_user = cv2.VideoCapture(0)
         while True:
             if self.speak_duration == 0:
                 print(self.speak_duration)
                 vid = cv2.VideoCapture("resources/animate_idle.mp4")
                 while self.speak_duration == 0:
+                    ret_user, self.user_frame = vid_user.read()
+                    if ret_user:
+                        draw_frame = copy.deepcopy(self.user_frame)
+                        if len(self.bbox) > 0:
+                            x1, y1, x2, y2, _ = self.bbox[0].astype(int)
+                            draw_frame = cv2.rectangle(draw_frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+
+                            if self.user_emotion:
+                                draw_frame = cv2.putText(draw_frame, self.user_emotion, (x1, y1 - 10),
+                                                         cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0))
+                        cv2.imshow("User", draw_frame)
+
                     ret, frame = vid.read()
                     if ret:
-                        cv2.imshow("zxc", frame)
+                        cv2.imshow("Bot", frame)
                         if cv2.waitKey(25) & 0xFF == ord('q'):
                             break
                     else:
@@ -43,9 +70,21 @@ class VoiceBot(object):
                 t1.start()
                 now = time.time()
                 while time.time() - now < self.speak_duration:
+                    ret_user, self.user_frame = vid_user.read()
+                    if ret_user:
+                        draw_frame = copy.deepcopy(self.user_frame)
+                        if len(self.bbox) > 0:
+                            x1, y1, x2, y2, _ = self.bbox[0].astype(int)
+                            draw_frame = cv2.rectangle(draw_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+                            if self.user_emotion:
+                                draw_frame = cv2.putText(draw_frame, self.user_emotion, (x1, y1 - 10),
+                                                         cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0))
+                        cv2.imshow("User", draw_frame)
+
                     ret, frame = vid.read()
                     if ret:
-                        cv2.imshow("zxc", frame)
+                        cv2.imshow("Bot", frame)
                         if cv2.waitKey(25) & 0xFF == ord('q'):
                             break
                     else:
@@ -56,7 +95,6 @@ class VoiceBot(object):
                 vid.release()
 
     def run_voicebot(self):
-        vid = cv2.VideoCapture(0)
         tts = TextToSpeech()
 
         face_recognition = FaceRecognitionModel()
@@ -67,22 +105,28 @@ class VoiceBot(object):
         thread_animate = threading.Thread(target=self.run_animate)
         thread_animate.start()
 
-        while True:
-            ret, frame = vid.read()
+        thread_bbox = threading.Thread(target=self.predict_bbox)
+        thread_bbox.start()
 
-            frame_predict_name = copy.deepcopy(frame)
-            bbox, landmark = face_detect.scrfd_detect(frame_predict_name)
-            if len(bbox) > 0:
+        thread_emotion = threading.Thread(target=self.predict_emotion, args=(emotion_detect,))
+        thread_emotion.start()
+
+        list_response_default = ["Chào bạn xinh đẹp, bạn tên là gì vậy?", "Bạn nói gì, nói lại xem",
+                                 "Mọi người đâu hết rồi"]
+        while True:
+            frame_predict_name = copy.deepcopy(self.user_frame)
+            if len(self.bbox) > 0:
                 is_have_human = [True, time.time()]
-                user_name = face_recognition.predict(frame_predict_name, landmark)
+                user_name = face_recognition.predict(frame_predict_name, self.landmark)
                 if len(user_name) > 0:
                     self.speak_duration = tts(
                         f"Bạn {user_name[:user_name.find('_')]} này, tránh ra cho người khác chơi nào")
+                    time.sleep(self.speak_duration + 2)
 
                 if len(user_name) == 0 and is_have_human[0]:
-                    response = f"Chào bạn xinh đẹp, bạn tên là gì vậy?"
-                    self.speak_duration = tts(response)
+                    self.speak_duration = tts(list_response_default[0])
                     while True:
+                        time.sleep(self.speak_duration)
                         guess = recognize_speech_from_mic()
 
                         if guess['error'] is None:
@@ -91,43 +135,33 @@ class VoiceBot(object):
 
                             user_name = face_recognition.add_user(message, frame_predict_name)
                             if len(user_name) == 0:
-                                self.speak_duration = tts("Bạn nói gì, nói lại xem")
+                                self.speak_duration = tts(list_response_default[1])
                                 continue
 
                             self.speak_duration = tts(
                                 f"Chào bạn {user_name[:user_name.find('_')]}, tôi nhớ bạn rồi đấy!")
 
-                            time.sleep(self.speak_duration + 1)
+                            time.sleep(self.speak_duration + 2)
                             self.speak_duration = tts("Giờ tôi sẽ đoán tuổi bạn, tút tút tút")
 
-                            bbox, _ = face_detect.scrfd_detect(frame)
+                            bbox, _ = face_detect.scrfd_detect(self.user_frame)
                             bbox = bbox[0].astype(int)
-                            face_image = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                            face_image = self.user_frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
 
                             # age
                             response = random.choice(Chatbot.age_messages)
                             age = guess_age(face_image)
                             self.speak_duration = tts(response.format(int(age)))
-
-                            # emotion
-                            user_emotion = emotion_detect(face_image)
-                            response = Chatbot.emotion_messages[user_emotion]
-                            self.speak_duration = tts(response)
-
-                            time.sleep(self.speak_duration + 1)
-                            self.speak_duration = tts("Good bye")
+                            time.sleep(1)
                             break
-
                         else:
-                            ret, frame = vid.read()
-                            bbox, _ = face_detect.scrfd_detect(frame)
-                            if len(bbox) > 0:
+                            if len(self.bbox) > 0:
                                 is_have_human = [True, time.time()]
                                 if int(time.time()) % 3:
-                                    self.speak_duration = tts("Bạn nói gì, nói lại xem")
+                                    self.speak_duration = tts(list_response_default[1])
                             else:
                                 if time.time() - is_have_human[1] > 10:
-                                    self.speak_duration = tts("Mọi người đâu hết rồi")
+                                    self.speak_duration = tts(list_response_default[2])
                                     break
 
 

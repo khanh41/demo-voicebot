@@ -81,6 +81,6 @@ class FaceRecognitionModel:
                                                                   weights='distance')
         self.train_with_data_loaded()
 
-        cv2.imwrite(f'resources/{user_name}.png', image)
+        # cv2.imwrite(f'resources/{user_name}.png', image)
 
         return user_name
