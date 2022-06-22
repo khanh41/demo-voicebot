@@ -57,7 +57,7 @@ class VoiceBot(object):
                                 font = ImageFont.truetype(fontpath, 32)
                                 img_pil = Image.fromarray(draw_frame)
                                 draw = ImageDraw.Draw(img_pil)
-                                draw.text((x1, y1 - 50), self.username, font=font, fill=(0, 255, 0))
+                                draw.text((x1, y1 - 40), self.username, font=font, fill=(0, 255, 0))
                                 draw_frame = np.array(img_pil)
 
                         cv2.imshow("User", draw_frame)
@@ -89,7 +89,7 @@ class VoiceBot(object):
                                 font = ImageFont.truetype(fontpath, 32)
                                 img_pil = Image.fromarray(draw_frame)
                                 draw = ImageDraw.Draw(img_pil)
-                                draw.text((x1, y1 - 50), self.username, font=font, fill=(0, 255, 0))
+                                draw.text((x1, y1 - 40), self.username, font=font, fill=(0, 255, 0))
                                 draw_frame = np.array(img_pil)
 
                         cv2.imshow("User", draw_frame)
