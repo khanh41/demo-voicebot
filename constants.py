@@ -19,8 +19,8 @@ class Chatbot:
                    '071', '072', '073', '074', '075', '076', '077', '078', '079', '080', '081', '082', '083', '084',
                    '085', '086', '087', '088', '089', '090', '091', '092', '093', '095', '096', '099', '100', '101',
                    '103', '105', '110', '111', '115', '116']
-    age_messages = ["Do you believe I can guess your age?", "Do you want me to guess your age?",
-                    "let me guess your age"]
+    age_messages = ["Bạn {} tuổi đúng không?", "Ping pong, {} tuổi", "Tôi chắc rằng bạn {} tuổi",
+                    "Ay, mặt bạn như ông cụ non, chắc là {} tuổi"]
 
     emotions = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
     emotion_messages = {

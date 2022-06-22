@@ -7,7 +7,7 @@ _detector.prepare(-1)
 
 
 def scrfd_detect(img):
-    bboxes, kps = _detector.detect(img, 0.4, input_size=(640, 640))
+    bboxes, kps = _detector.detect(img, 0.6, input_size=(640, 640))
 
     w, h, _ = img.shape
     for i in range(len(bboxes)):

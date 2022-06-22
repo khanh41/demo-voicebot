@@ -8,12 +8,20 @@ from face_embedding import arcface_inference
 
 
 def get_name(message: str):
-    if "is" in message:
-        is_index = message.find("is") + 3
-        return message[is_index:message.find(" ", is_index)]
+    if "tên" in message:
+        if "là" in message:
+            is_index = message.find("là") + 3
+        else:
+            is_index = message.find("tên") + 4
+
+        end_index = message.find(" ", is_index)
+        if end_index == -1:
+            return message[is_index:]
+        return message[is_index:end_index]
+
     if " " not in message:
         return message
-    return "Lady"
+    return ""
 
 
 class FaceRecognitionModel:
@@ -50,6 +58,9 @@ class FaceRecognitionModel:
 
     def add_user(self, message, image):
         user_name = get_name(message)
+        if len(user_name) == 0:
+            return user_name
+
         user_name = f"{user_name}_{uuid.uuid4()}"
 
         if user_name in self.y:

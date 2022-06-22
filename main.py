@@ -10,7 +10,6 @@ from playsound import playsound
 import face_detect
 from challenges.clf_emotion import EmotionDetect
 from challenges.guess_age import GuessAge
-from chatbot.blenderbot import BlenderBot
 from constants import Chatbot
 from face_clf import FaceRecognitionModel
 from speech.speech_to_text import recognize_speech_from_mic
@@ -57,103 +56,79 @@ class VoiceBot(object):
                 vid.release()
 
     def run_voicebot(self):
-        vid = cv2.VideoCapture("/home/khanhpluto/Videos/vuong_mask.avi")
+        vid = cv2.VideoCapture(0)
         tts = TextToSpeech()
-
-        # chatbot = AeonaBot()
-        chatbot = BlenderBot()
 
         face_recognition = FaceRecognitionModel()
 
         emotion_detect = EmotionDetect()
         guess_age = GuessAge()
 
-        random_challenges = -1
-        random_choice_response = ""
-        temp_response = {
-            "error": None,
-            "transcription": "Hello"
-        }
-
         thread_animate = threading.Thread(target=self.run_animate)
         thread_animate.start()
+
         while True:
-            # ret, frame = vid.read()
-            frame = cv2.imread("/home/khanhpluto/Downloads/download.jpeg")
-            ret = True
-            if ret:
-                frame_predict_name = copy.deepcopy(frame)
-                bbox, landmark = face_detect.scrfd_detect(frame_predict_name)
-                if len(bbox) > 0:
-                    user_name = face_recognition.predict(frame_predict_name, landmark)
-                    if len(user_name) == 0:
-                        response = f"Hello, What is your name"
-                        self.speak_duration = tts(response)
-                        while True:
-                            guess = recognize_speech_from_mic()
-                            # temp_response['transcription'] = "David"
-                            # guess = temp_response
+            ret, frame = vid.read()
 
-                            if guess['error'] is None:
-                                message = guess["transcription"]
-                                print("User: " + message)
+            frame_predict_name = copy.deepcopy(frame)
+            bbox, landmark = face_detect.scrfd_detect(frame_predict_name)
+            if len(bbox) > 0:
+                is_have_human = [True, time.time()]
+                user_name = face_recognition.predict(frame_predict_name, landmark)
+                if len(user_name) > 0:
+                    self.speak_duration = tts(
+                        f"Bạn {user_name[:user_name.find('_')]} này, tránh ra cho người khác chơi nào")
 
-                                user_name = face_recognition.add_user(message, frame_predict_name)
-                                self.speak_duration = tts(
-                                    f"Nice to meet you {user_name[:user_name.find('_')]}, How are you")
-                                break
-                            else:
-                                self.speak_duration = tts("Can you say again?")
-                    else:
-                        self.speak_duration = tts(f"Nice to meet you {user_name[:user_name.find('_')]}, How are you")
-
-                    message = ""
+                if len(user_name) == 0 and is_have_human[0]:
+                    response = f"Chào bạn xinh đẹp, bạn tên là gì vậy?"
+                    self.speak_duration = tts(response)
                     while True:
-                        if self.speak_duration == 0:
-                            guess = recognize_speech_from_mic()
-                            # guess = temp_response
+                        guess = recognize_speech_from_mic()
 
-                            if guess['error'] is None:
-                                message = guess["transcription"]
-                                print("User: " + message)
+                        if guess['error'] is None:
+                            message = guess["transcription"]
+                            print("User: " + message)
 
-                                if (len(random_choice_response) > 0 and any(
-                                        x in message for x in ["yes", "yeah", "ok"])) \
-                                        :
-                                    age = int(guess_age(frame))
-                                    response = f"Are you {age} years old?"
-                                    self.speak_duration = tts(response)
-                                    random_choice_response = ""
-                                else:
-                                    random_challenges = random.randint(1, 8)
-                                    if random_challenges in [2, 5]:
-                                        bbox, _ = face_detect.scrfd_detect(frame)
-                                        bbox = bbox[0].astype(int)
-                                        face_image = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-                                        if random_challenges == 2:
-                                            # age
-                                            response = random.choice(Chatbot.age_messages)
-                                            random_choice_response = response
-                                            guess_age(face_image)
-                                            self.speak_duration = tts(response)
+                            user_name = face_recognition.add_user(message, frame_predict_name)
+                            if len(user_name) == 0:
+                                self.speak_duration = tts("Bạn nói gì, nói lại xem")
+                                continue
 
-                                        else:
-                                            # emotion
-                                            user_emotion = emotion_detect(face_image)
-                                            response = Chatbot.emotion_messages[user_emotion]
-                                            self.speak_duration = tts(response)
-                                    else:
-                                        response = chatbot.send(message)
-                                        self.speak_duration = tts(response)
-                                    temp_response['transcription'] = response
+                            self.speak_duration = tts(
+                                f"Chào bạn {user_name[:user_name.find('_')]}, tôi nhớ bạn rồi đấy!")
+
+                            time.sleep(self.speak_duration + 1)
+                            self.speak_duration = tts("Giờ tôi sẽ đoán tuổi bạn, tút tút tút")
+
+                            bbox, _ = face_detect.scrfd_detect(frame)
+                            bbox = bbox[0].astype(int)
+                            face_image = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+
+                            # age
+                            response = random.choice(Chatbot.age_messages)
+                            age = guess_age(face_image)
+                            self.speak_duration = tts(response.format(int(age)))
+
+                            # emotion
+                            user_emotion = emotion_detect(face_image)
+                            response = Chatbot.emotion_messages[user_emotion]
+                            self.speak_duration = tts(response)
+
+                            time.sleep(self.speak_duration + 1)
+                            self.speak_duration = tts("Good bye")
+                            break
+
+                        else:
+                            ret, frame = vid.read()
+                            bbox, _ = face_detect.scrfd_detect(frame)
+                            if len(bbox) > 0:
+                                is_have_human = [True, time.time()]
+                                if int(time.time()) % 3:
+                                    self.speak_duration = tts("Bạn nói gì, nói lại xem")
                             else:
-                                bbox, _ = face_detect.scrfd_detect(frame)
-                                if len(bbox) > 0:
-                                    self.speak_duration = tts("I can not hear you")
-                                else:
-                                    self.speak_duration = tts("Good bye")
+                                if time.time() - is_have_human[1] > 10:
+                                    self.speak_duration = tts("Mọi người đâu hết rồi")
                                     break
-            # thread_animate.join()
 
 
 if __name__ == '__main__':

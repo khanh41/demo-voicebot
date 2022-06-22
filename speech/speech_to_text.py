@@ -45,7 +45,7 @@ def recognize_speech_from_mic():
     # recognize_ibm()
     # recognize_sphinx()
     try:
-        response["transcription"] = recognizer.recognize_google(audio, language="en-EN")
+        response["transcription"] = recognizer.recognize_google(audio, language="vi-VI")
     except sr.RequestError:
         # API was unreachable or unresponsive
         response["success"] = False

@@ -1,23 +1,17 @@
-import subprocess
-import threading
-import time
+import os
 from typing import Any
 
 from gtts import gTTS
-from playsound import playsound
 
 
 def get_length(filename):
-    result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
-                             "format=duration", "-of",
-                             "default=noprint_wrappers=1:nokey=1", filename],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
-    return float(result.stdout)
+    from mutagen.mp3 import MP3
+    audio = MP3(filename)
+    return audio.info.length
 
 
 class TextToSpeech:
-    language = 'en'
+    language = 'vi'
 
     def __init__(self) -> None:
         pass
@@ -27,6 +21,7 @@ class TextToSpeech:
         myobj = gTTS(text=mytext, lang=self.language, slow=False)
 
         mp3_name = "welcome.mp3"
+        os.remove(mp3_name)
         myobj.save(mp3_name)
         # time.sleep(1)
         return get_length(mp3_name)
