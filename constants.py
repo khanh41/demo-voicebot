@@ -32,3 +32,16 @@ class Chatbot:
         "sad": "Your face doesn't look good. What are you sad about?",
         "surprise": "You seem so happy? What are you happy about today? Can you tell me?",
     }
+
+
+def get_max_bounding_box(face_locations):
+    index_max_bounding_box = None
+    max_area = (0, 0)
+    for i in range(len(face_locations)):
+        x1, y1, x2, y2, _ = face_locations[i]
+        temp = (x2 - x1) * (y2 - y1)
+        if temp > max_area[0] * max_area[1]:
+            index_max_bounding_box = i
+            max_area = (x2 - x1, y2 - y1)
+
+    return index_max_bounding_box, max_area
