@@ -5,6 +5,8 @@ import threading
 import time
 
 import cv2
+import numpy as np
+from PIL import ImageFont, ImageDraw, Image
 from playsound import playsound
 
 import face_detect
@@ -22,7 +24,7 @@ class VoiceBot(object):
     def __init__(self):
         self.speak_duration = 0
         self.user_frame = None
-        self.user_emotion = "Neutral"
+        self.username = ""
         self.bbox = []
         self.landmark = []
 
@@ -50,9 +52,14 @@ class VoiceBot(object):
                             x1, y1, x2, y2, _ = self.bbox[0].astype(int)
                             draw_frame = cv2.rectangle(draw_frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
-                            if self.user_emotion:
-                                draw_frame = cv2.putText(draw_frame, self.user_emotion, (x1, y1 - 10),
-                                                         cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0))
+                            if self.username:
+                                fontpath = "resources/Catamaran-Medium.ttf"
+                                font = ImageFont.truetype(fontpath, 32)
+                                img_pil = Image.fromarray(draw_frame)
+                                draw = ImageDraw.Draw(img_pil)
+                                draw.text((x1, y1 - 50), self.username, font=font, fill=(0, 255, 0))
+                                draw_frame = np.array(img_pil)
+
                         cv2.imshow("User", draw_frame)
 
                     ret, frame = vid.read()
@@ -77,9 +84,14 @@ class VoiceBot(object):
                             x1, y1, x2, y2, _ = self.bbox[0].astype(int)
                             draw_frame = cv2.rectangle(draw_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-                            if self.user_emotion:
-                                draw_frame = cv2.putText(draw_frame, self.user_emotion, (x1, y1 - 10),
-                                                         cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0))
+                            if self.username:
+                                fontpath = "resources/Catamaran-Medium.ttf"
+                                font = ImageFont.truetype(fontpath, 32)
+                                img_pil = Image.fromarray(draw_frame)
+                                draw = ImageDraw.Draw(img_pil)
+                                draw.text((x1, y1 - 50), self.username, font=font, fill=(0, 255, 0))
+                                draw_frame = np.array(img_pil)
+
                         cv2.imshow("User", draw_frame)
 
                     ret, frame = vid.read()
@@ -119,8 +131,9 @@ class VoiceBot(object):
                 is_have_human = [True, time.time()]
                 user_name = face_recognition.predict(frame_predict_name, self.landmark)
                 if len(user_name) > 0:
+                    self.username = user_name[:user_name.find('_')]
                     self.speak_duration = tts(
-                        f"Bạn {user_name[:user_name.find('_')]} này, tránh ra cho người khác chơi nào")
+                        f"Bạn {self.username} này, tránh ra cho người khác chơi nào")
                     time.sleep(self.speak_duration + 2)
 
                 if len(user_name) == 0 and is_have_human[0]:
@@ -138,8 +151,9 @@ class VoiceBot(object):
                                 self.speak_duration = tts(list_response_default[1])
                                 continue
 
+                            self.username = user_name[:user_name.find('_')]
                             self.speak_duration = tts(
-                                f"Chào bạn {user_name[:user_name.find('_')]}, tôi nhớ bạn rồi đấy!")
+                                f"Chào bạn {self.username}, tôi nhớ bạn rồi đấy!")
 
                             time.sleep(self.speak_duration + 1)
                             self.speak_duration = tts("Giờ tôi sẽ đoán tuổi bạn, tút tút tút")
@@ -150,6 +164,8 @@ class VoiceBot(object):
                             age = guess_age(self.user_frame, self.landmark)
                             self.speak_duration = tts(response.format(int(age)))
                             time.sleep(2)
+
+                            # self.__init__()
                             break
                         else:
                             if len(self.bbox) > 0:
