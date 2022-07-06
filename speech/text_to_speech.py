@@ -1,7 +1,9 @@
 import os
+import threading
 from typing import Any
 
 from gtts import gTTS
+from playsound import playsound
 
 
 def get_length(filename):
@@ -23,4 +25,5 @@ class TextToSpeech:
         mp3_name = "welcome.mp3"
         os.remove(mp3_name)
         myobj.save(mp3_name)
+        threading.Thread(target=playsound, args=("welcome.mp3",)).start()
         return get_length(mp3_name)

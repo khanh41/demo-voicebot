@@ -1,3 +1,4 @@
+import copy
 import math
 import os
 import uuid
@@ -40,9 +41,6 @@ class FaceRecognitionModel:
 
     def train(self, train_dir, n_neighbors=None, knn_algo='ball_tree', verbose=False):
         print("Start training...")
-        # Loop through each person in the training set
-        if len(os.listdir(train_dir)) >= 1:
-            return
 
         for class_dir in os.listdir(train_dir):
             if not os.path.isdir(os.path.join(train_dir, class_dir)):
@@ -99,6 +97,7 @@ class FaceRecognitionModel:
         # Use the KNN model to find the best matches for the test face
         closest_distances = self.classifier.kneighbors(faces_encodings, n_neighbors=1)
         closest_distances_mask = self.classifier_mask.kneighbors(faces_encodings, n_neighbors=1)
+        print(closest_distances)
 
         if closest_distances[0][0] <= 1.1:
             pred = self.classifier.predict(faces_encodings)[0]
@@ -109,21 +108,20 @@ class FaceRecognitionModel:
 
         return pred
 
-    def add_user(self, message, image):
-        user_name = get_name(message)
-        if len(user_name) == 0:
-            return user_name
-
-        user_name = f"{user_name}_{uuid.uuid4()}"
+    def add_user(self, age, image, landmarks):
+        image_copy = copy.deepcopy(image)
+        if age != "temp":
+            user_name = f"{age}_{uuid.uuid4()}"
+        else:
+            user_name = age
 
         if user_name in self.y:
             raise Exception(f"{user_name} already exist")
 
-        face_locations, landmarks = scrfd_detect(image)
-        self.X.append(arcface_inference(image, landmarks)[0])
+        self.X.append(arcface_inference(image_copy, landmarks)[0])
 
-        image[int(landmarks[0][2][1]) - 15:, :, :] *= 0
-        self.X_mask.append(arcface_inference(image, landmarks)[0])
+        image_copy[int(landmarks[0][2][1]) - 15:, :, :] *= 0
+        self.X_mask.append(arcface_inference(image_copy, landmarks)[0])
 
         self.y.append(user_name)
 
@@ -133,7 +131,13 @@ class FaceRecognitionModel:
             self.classifier_mask = neighbors.KNeighborsClassifier(n_neighbors=1, algorithm='ball_tree',
                                                                   weights='distance')
         self.train_with_data_loaded()
-
-        # cv2.imwrite(f'resources/{user_name}.png', image)
-
         return user_name
+
+    def delete_user_temp(self):
+        temp_index = self.y.index("temp")
+        self.y.pop(temp_index)
+        self.X.pop(temp_index)
+        self.X_mask.pop(temp_index)
+
+        if len(self.y) > 0:
+            self.train_with_data_loaded()
